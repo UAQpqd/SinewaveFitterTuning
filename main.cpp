@@ -182,7 +182,7 @@ int main() {
         //Add to device queue the run
         //When the task ends the device must be
         //added to the idleDevices deque
-        deviceThreadMap[device] = std::async(runBatchFit,
+        deviceThreadMap[device] = std::async(std::launch::async,runBatchFit,
                                      device,
                                      deviceContextMap[device],
                                      deviceQueueMap[device],
@@ -326,7 +326,7 @@ void runBatchFit(
             };
     for(size_t replication = 0; replication < replications; replication++) {
         MinusDarwin::Solver solver(config,evaluatePopulationLambda);
-        solver.run(true);
+        solver.run(false);
         traces.push_back(solver.tracer);
     }
     free(dX);
