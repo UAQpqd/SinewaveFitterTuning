@@ -1,3 +1,6 @@
 [submodule "minusDarwin"]
 	path = minusDarwin
 	url = https://github.com/UAQpqd/minusDarwin.git
+[submodule "synthSignal"]
+	path = synthSignal
+	url = https://github.com/UAQpqd/synthSignal.git
