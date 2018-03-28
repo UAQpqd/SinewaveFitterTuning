@@ -24,6 +24,7 @@ const float omegaMin = 2.0f*M_PI*60.0f*0.94f;
 const float omegaMax = 2.0f*M_PI*60.0f*1.06f;
 const float phiMax = 2.0f*M_PI;
 const size_t maxGens = 80;
+const size_t replications = 100;
 
 struct cmpDevice{
     bool operator()(const bc::device& lhs, const bc::device &rhs) {
@@ -79,7 +80,6 @@ int main() {
     std::cout << "Initializing test..." << std::endl;
     std::ofstream of(outputFilename.c_str(),std::ofstream::out);
     auto configsDeque = generateConfigurations();
-    const size_t replications = 10;
     of << "popSize,mode,modeDepth,coProb,diffFactor,useUniform,gen,mean,sd" << std::endl;
     auto devicesCount = bc::system::device_count();
     auto devices = std::vector<bc::device>();
