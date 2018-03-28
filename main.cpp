@@ -194,6 +194,10 @@ int main() {
                                      replications,
                                      std::ref(sumOfSquares));
     }
+    //Wait for all to finish
+    for(auto &pair : deviceThreadMap) {
+        pair.second.wait();
+    }
     of.close();
     delete(wf);
     delete(configsDeque);
