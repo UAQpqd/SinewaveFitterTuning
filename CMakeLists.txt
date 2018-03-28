@@ -9,5 +9,5 @@ add_subdirectory(minusDarwin)
 add_subdirectory(synthSignal)
 
 add_executable(SinewaveFitterTuning main.cpp)
-target_link_libraries(SinewaveFitterTuning PRIVATE MinusDarwin SynthSignal ${OpenCL_INCLUDE_DIR})
-target_include_directories(SinewaveFitterTuning PUBLIC minusDarwin synthSignal OpenCL::OpenCL ${Boost_LIBRARIES})
+target_include_directories(SinewaveFitterTuning PUBLIC minusDarwin synthSignal ${OpenCL_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
+target_link_libraries(SinewaveFitterTuning PUBLIC MinusDarwin SynthSignal OpenCL::OpenCL ${Boost_LIBRARIES} -lpthread -lm)
