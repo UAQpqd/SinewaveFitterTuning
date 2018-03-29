@@ -196,7 +196,9 @@ int main() {
     }
     //Wait for all to finish
     for(auto &pair : deviceThreadMap) {
+        auto device = pair.first;
         pair.second.wait();
+        writeResults(of,deviceConfigMap[device],deviceTraceMap[device]);
     }
     of.close();
     delete(wf);
