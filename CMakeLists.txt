@@ -11,6 +11,11 @@ add_subdirectory(synthSignal)
 add_executable(SinewaveFitterTuning SinewaveFitterTuning.cpp)
 target_include_directories(SinewaveFitterTuning PUBLIC minusDarwin synthSignal ${OpenCL_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
 target_link_libraries(SinewaveFitterTuning PUBLIC MinusDarwin SynthSignal OpenCL::OpenCL ${Boost_LIBRARIES} -lpthread -lm)
+
 add_executable(SinewaveTime SinewaveTime.cpp)
 target_include_directories(SinewaveTime PUBLIC minusDarwin synthSignal ${OpenCL_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
 target_link_libraries(SinewaveTime PUBLIC MinusDarwin SynthSignal OpenCL::OpenCL ${Boost_LIBRARIES} -lpthread -lm)
+
+add_executable(SerialParallelComparison SerialParallelComparison.cpp)
+target_include_directories(SerialParallelComparison PUBLIC minusDarwin synthSignal ${OpenCL_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
+target_link_libraries(SerialParallelComparison PUBLIC MinusDarwin SynthSignal OpenCL::OpenCL ${Boost_LIBRARIES} -lpthread -lm)
