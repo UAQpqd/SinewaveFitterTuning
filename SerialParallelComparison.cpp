@@ -32,7 +32,7 @@ typedef std::pair<std::vector<float> *, float> SignalAndSS;
 typedef std::pair<ExperimentConfiguration, long long> ResultPair;
 
 const std::string outputFilename = "SerialParallelComparison.csv";
-const std::vector<float> signalTimeVector = {1.0f,2.0f,4.0f,8.0f,16.0f,32.0f};
+const std::vector<float> signalTimeVector = {1.0f,2.0f,4.0f,8.0f/*,16.0f,32.0f*/};
 const unsigned int sps = 8000;
 const float a = 127.0f*sqrt(2);
 const float omega = 2.0f*M_PI*60.0f;
@@ -40,12 +40,11 @@ const float phi = M_PI;
 const float omegaMin = 2.0f*M_PI*60.0f*0.94f;
 const float omegaMax = 2.0f*M_PI*60.0f*1.06f;
 const float phiMax = 2.0f*M_PI;
-const size_t maxGens = 80;
-const size_t replications = 100;
+const size_t replications = 10;
 MinusDarwin::SolverParameterSet config = {
         2,
-        200,
-        80,
+        /*200*/200,
+        /*80*/20,
         MinusDarwin::GoalFunction::MaxGenerations,
         MinusDarwin::CrossoverMode::Best,
         1,
@@ -97,7 +96,7 @@ int main(int argc, char **argv) {
     std::cout << "[SerialParallelComparison] Initializing test..." << std::endl;
     std::ofstream of(outputFilename.c_str(), std::ofstream::out);
     // Mode: Parallel or Serial
-    of << "signalTime,rep,mode" << std::endl;
+    of << "signalTime,rep,mode,time" << std::endl;
     auto signalsVector = createSignalsVector();
     auto gpuResults = runGPUExperiments(signalsVector);
     auto cpuResults = runCPUExperiments(signalsVector);
@@ -227,8 +226,8 @@ std::vector<ResultPair> runGPUExperiments(
     }
     return results;
 }
-void runCPUCoreExperiment(SignalAndSS &signalAndSS,
-                          std::vector<ResultPair> &results) {
+void runCPUCoreExperiment(SignalAndSS signalAndSS,
+                          std::vector<ResultPair> *results) {
     auto signal = signalAndSS.first;
     auto sumOfSquares = signalAndSS.second;
     auto evaluatePopulationLambdaSerial =
@@ -265,47 +264,42 @@ void runCPUCoreExperiment(SignalAndSS &signalAndSS,
                 boost::chrono::duration_cast<boost::chrono::milliseconds>(endTime-startTime);
         result.second = duration.count();
         std::cout << "CPU Time: " << result.second << std::endl;
-        results.at(rep) = result;
+        results->push_back(result);
     }
 }
 /* This function will run on async threads
  * where each thread will run a number of
  * replications
  */
-std::vector<ResultPair> runCPUExperiments(const std::vector<SignalAndSS> &signalsAndSSVector) {
+std::vector<ResultPair> runCPUExperiments(
+        const std::vector<SignalAndSS> &signalsAndSSVector) {
     auto cores = std::thread::hardware_concurrency();
-    std::deque<SignalAndSS> signalsAndSSDeque(
-            signalsAndSSVector.begin(),
-            signalsAndSSVector.end());
     std::vector<std::vector<ResultPair> > results(
-            signalsAndSSVector.size(),
-            std::vector<ResultPair>(replications)
+            signalsAndSSVector.size()
     );
     std::vector<std::future<void> > futures;
     size_t count = 0;
     for(size_t core = 0; core<cores; core++) {
-        if(signalsAndSSDeque.empty()) break;
-        auto signalAndSS = signalsAndSSDeque.front();
-        signalsAndSSDeque.pop_front();
+        if(count >= signalsAndSSVector.size()) break;
         futures.push_back(std::async(
                 std::launch::async,
                 runCPUCoreExperiment,
-                std::ref(signalAndSS),
-                std::ref(results.at(count++))));
+                signalsAndSSVector.at(count),
+                &results.at(count)));
+        count++;
     }
-    while(!signalsAndSSDeque.empty()) {
+    while(count < signalsAndSSVector.size()) {
         for(auto &future : futures)
         {
-            if(!signalsAndSSDeque.empty() &&
-                    future.wait_for(std::chrono::seconds(0)) ==
+            if(future.wait_for(std::chrono::seconds(0)) ==
                     std::future_status::ready) {
-                auto signalAndSS = signalsAndSSDeque.front();
-                signalsAndSSDeque.pop_front();
                 future = std::async(
                         std::launch::async,
                         runCPUCoreExperiment,
-                        std::ref(signalAndSS),
-                        std::ref(results.at(count++)));
+                        signalsAndSSVector.at(count),
+                        &results.at(count));
+                count++;
+                break;
             }
         }
     }
