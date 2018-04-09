@@ -32,7 +32,7 @@ typedef std::pair<std::vector<float> *, float> SignalAndSS;
 typedef std::pair<ExperimentConfiguration, long long> ResultPair;
 
 const std::string outputFilename = "SerialParallelComparison.csv";
-const std::vector<float> signalTimeVector = {1.0f/*,2.0f,4.0f,8.0f,16.0f,32.0f*/};
+const std::vector<float> signalTimeVector = {1.0f,2.0f,4.0f,8.0f,16.0f,32.0f};
 const unsigned int sps = 8000;
 const float a = 127.0f*sqrt(2);
 const float omega = 2.0f*M_PI*60.0f;
@@ -41,7 +41,7 @@ const float omegaMin = 2.0f*M_PI*60.0f*0.94f;
 const float omegaMax = 2.0f*M_PI*60.0f*1.06f;
 const float phiMax = 2.0f*M_PI;
 const size_t maxGens = 80;
-const size_t replications = /*100*/1;
+const size_t replications = 100;
 MinusDarwin::SolverParameterSet config = {
         2,
         200,
