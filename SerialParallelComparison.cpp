@@ -273,7 +273,7 @@ void runCPUCoreExperiment(SignalAndSS signalAndSS,
  */
 std::vector<ResultPair> runCPUExperiments(
         const std::vector<SignalAndSS> &signalsAndSSVector) {
-    auto cores = std::thread::hardware_concurrency();
+    auto cores = /*std::thread::hardware_concurrency();*/1;
     std::vector<std::vector<ResultPair> > results(
             signalsAndSSVector.size()
     );
