@@ -100,11 +100,15 @@ int main(int argc, char **argv) {
     of << "signalTime,rep,mode" << std::endl;
     auto signalsVector = createSignalsVector();
     auto gpuResults = runGPUExperiments(signalsVector);
-    //auto cpuResults = runCPUExperiments(signalsVector);
+    auto cpuResults = runCPUExperiments(signalsVector);
 
     for(auto result : gpuResults)
         of << result.first.signalTime << ","
            << result.first.rep << ",Parallel,"
+           << result.second << std::endl;
+    for(auto result : cpuResults)
+        of << result.first.signalTime << ","
+           << result.first.rep << ",Serial,"
            << result.second << std::endl;
     return 0;
 }
@@ -225,7 +229,44 @@ std::vector<ResultPair> runGPUExperiments(
 }
 void runCPUCoreExperiment(SignalAndSS &signalAndSS,
                           std::vector<ResultPair> &results) {
-
+    auto signal = signalAndSS.first;
+    auto sumOfSquares = signalAndSS.second;
+    auto evaluatePopulationLambdaSerial =
+            [signal, sumOfSquares/*, sps, a,
+                            omegaMin, omegaMax, phiMax*/](
+                    MinusDarwin::Scores &scores,
+                    const MinusDarwin::Population &population) {
+                for (size_t aId = 0; aId < population.size(); ++aId) {
+                    auto &agent = population.at(aId);
+                    float error = 0.0f;
+                    for (size_t p = 0; p < signal->size(); p++) {
+                        float t = (float)p/(float)sps;
+                        float realOmega = omegaMin+agent.at(0)*(omegaMax-omegaMin);
+                        float realPhi = agent.at(1)*phiMax;
+                        float estimated =
+                                a*sin(realOmega*t+realPhi);
+                        error += pow(estimated-signal->at(p),2.0f);
+                    }
+                    scores.at(aId) = error/sumOfSquares;
+                }
+            };
+    MinusDarwin::Solver solver(config,evaluatePopulationLambdaSerial);
+    for(size_t rep = 0; rep < replications; rep++) {
+        /* Each replication is computed and result is
+         * appended to the results vector
+         */
+        ResultPair result;
+        result.first.signalTime = (float)signal->size()/(float)sps;
+        result.first.rep = rep;
+        auto startTime = boost::chrono::high_resolution_clock::now();
+        solver.run(false);
+        auto endTime = boost::chrono::high_resolution_clock::now();
+        auto duration =
+                boost::chrono::duration_cast<boost::chrono::milliseconds>(endTime-startTime);
+        result.second = duration.count();
+        std::cout << "CPU Time: " << result.second << std::endl;
+        results.at(rep) = result;
+    }
 }
 /* This function will run on async threads
  * where each thread will run a number of
@@ -240,7 +281,7 @@ std::vector<ResultPair> runCPUExperiments(const std::vector<SignalAndSS> &signal
             signalsAndSSVector.size(),
             std::vector<ResultPair>(replications)
     );
-    std::vector<std::future> futures;
+    std::vector<std::future<void> > futures;
     size_t count = 0;
     for(size_t core = 0; core<cores; core++) {
         if(signalsAndSSDeque.empty()) break;
@@ -252,7 +293,7 @@ std::vector<ResultPair> runCPUExperiments(const std::vector<SignalAndSS> &signal
                 std::ref(signalAndSS),
                 std::ref(results.at(count++))));
     }
-    while(!signalsAndSSDeque.empty() || futures.size() != 0) {
+    while(!signalsAndSSDeque.empty()) {
         for(auto &future : futures)
         {
             if(!signalsAndSSDeque.empty() &&
@@ -269,5 +310,11 @@ std::vector<ResultPair> runCPUExperiments(const std::vector<SignalAndSS> &signal
         }
     }
     for(auto &future : futures)
-        future.join();
+        future.wait();
+    auto result = std::vector<ResultPair>();
+    for(auto &r : results) {
+        for(auto &v : r)
+            result.push_back(v);
+    }
+    return result;
 }
